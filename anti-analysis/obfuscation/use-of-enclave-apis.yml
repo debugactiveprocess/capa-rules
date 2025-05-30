@@ -1,0 +1,43 @@
+rule:
+  meta:
+    name: uses Windows Enclave API
+    namespace: anti-analysis/obfuscation
+    authors:
+      - ialle.teixeira@swarmy.io
+    scope: function
+    att&ck:
+      - Defense Evasion::Obfuscated Files or Information [T1027]
+    references:
+      - https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-createenclave
+      - https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-loadenclavedata
+      - https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-initializeenclave
+      - https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-callenclave
+      - https://attack.mitre.org/techniques/T1027/
+    examples:
+      - |
+        Malware or advanced tools may leverage Windows Enclave APIs to create an isolated region of memory (an enclave),
+        write encrypted or encoded payloads into it via `LoadEnclaveData`, initialize the enclave with `InitializeEnclave`,
+        and later execute code using `CallEnclave`. Some may check hardware support with `IsEnclaveTypeSupported` before use.
+        This technique evades traditional memory scanners and EDR visibility due to the opaque nature of enclave memory.
+
+        APIs like `LoadEnclaveImageA/W` can be used to load full PE binaries into enclaves. Enclaves are normally used
+        for DRM, sensitive computation, and Intel SGX, but are increasingly abused by malware loaders for stealthy execution.
+
+        Example toolchains:
+        - CreateEnclave → LoadEnclaveData → InitializeEnclave → CallEnclave
+        - CreateEnclave → LoadEnclaveImageA → CallEnclave
+        - IsEnclaveTypeSupported used to decide dynamically
+
+  features:
+    - and:
+        - os: windows
+        - or:
+            - api: CreateEnclave
+            - api: LoadEnclaveData
+            - api: InitializeEnclave
+            - api: CallEnclave
+            - api: TerminateEnclave
+            - api: DeleteEnclave
+            - api: IsEnclaveTypeSupported
+            - api: LoadEnclaveImageA
+            - api: LoadEnclaveImageW
