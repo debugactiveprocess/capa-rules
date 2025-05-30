@@ -1,0 +1,67 @@
+rule:
+  meta:
+    name: uses Windows Enclave API
+    namespace: anti-analysis/obfuscation
+    authors:
+      - ialle.teixeira@swarmy.io
+    scope: function
+    att&ck:
+      - Defense Evasion::Obfuscated Files or Information [T1027]
+    references:
+      - https://learn.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-createenclave
+      - https://attack.mitre.org/techniques/T1027/
+    examples:
+      - |
+        Malware or advanced tools may leverage Windows Enclave APIs to create an isolated region of memory (an enclave),
+        write encrypted or encoded payloads into it via `LoadEnclaveData`, initialize the enclave with `InitializeEnclave`,
+        and later execute code using `CallEnclave`. Some may check hardware support with `IsEnclaveTypeSupported` before use.
+        This technique evades traditional memory scanners and EDR visibility due to the opaque nature of enclave memory.
+        APIs like `LoadEnclaveImageA/W` can be used to load full PE binaries into enclaves. Enclaves are normally used
+        for DRM, sensitive computation, and Intel SGX, but are increasingly abused by malware loaders for stealthy execution.
+        Example toolchains:
+        - CreateEnclave → LoadEnclaveData → InitializeEnclave → CallEnclave
+        - CreateEnclave → LoadEnclaveImageA → CallEnclave
+        - ZwCreateEnclave or NtCreateEnclave used for direct syscall injection
+        - LdrCreateEnclave variants seen in stealth loaders using NTDLL export resolution
+
+  features:
+    - and:
+        - os: windows
+        - or:
+            # Win32 API
+            - api: CreateEnclave
+            - api: LoadEnclaveData
+            - api: InitializeEnclave
+            - api: CallEnclave
+            - api: TerminateEnclave
+            - api: DeleteEnclave
+            - api: IsEnclaveTypeSupported
+            - api: LoadEnclaveImageA
+            - api: LoadEnclaveImageW
+
+            # Native API (NTDLL / Syscalls)
+            - api: NtCreateEnclave
+            - api: NtInitializeEnclave
+            - api: NtLoadEnclaveData
+            - api: NtCallEnclave
+            - api: NtTerminateEnclave
+
+            - api: ZwCreateEnclave
+            - api: ZwInitializeEnclave
+            - api: ZwLoadEnclaveData
+            - api: ZwCallEnclave
+            - api: ZwTerminateEnclave
+
+            # Rtl variants (low-level utility/dispatch)
+            - api: RtlCallEnclave
+            - api: RtlCallEnclaveReturn
+            - api: RtlEnclaveCallDispatch
+            - api: RtlEnclaveCallDispatchReturn
+            - api: RtlIsEnclaveFeaturePresent
+
+            # Ldr variants (PE loader / module mapping)
+            - api: LdrCreateEnclave
+            - api: LdrInitializeEnclave
+            - api: LdrLoadEnclaveModule
+            - api: LdrCallEnclave
+            - api: LdrDeleteEnclave
